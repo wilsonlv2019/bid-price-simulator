@@ -1,9 +1,14 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, LogIn } from 'lucide-react';
-import { useAuthStore } from '@/stores/authStore';
-import api, { type LoginRequest, type ApiResponse, type User } from '@/lib/api';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Eye, EyeOff, Mail, Lock, LogIn } from 'lucide-react';
 import { toast } from 'sonner';
+import { useAuthStore, type User } from '@/stores/authStore';
+import api, { type ApiResponse } from '@/lib/api';
+
+interface LoginRequest {
+  email: string;
+  password: string;
+}
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -11,7 +16,11 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const login = useAuthStore((state) => state.login);
+  const location = useLocation();
+  const { login } = useAuthStore();
+
+  // 获取用户之前尝试访问的页面
+  const from = location.state?.from?.pathname || '/dashboard';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,8 +44,9 @@ export default function Login() {
         console.log('登录成功，用户信息:', user);
         login(user, token);
         toast.success('登录成功！');
-        console.log('准备跳转到 /dashboard');
-        navigate('/dashboard');
+        console.log('准备跳转到', from);
+        // 重定向到用户之前访问的页面或默认页面
+        navigate(from, { replace: true });
         console.log('跳转命令已执行');
       } else {
         console.log('登录失败:', response.data.message);

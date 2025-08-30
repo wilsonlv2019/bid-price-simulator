@@ -13,7 +13,7 @@ export default function Simulation() {
   const [formData, setFormData] = useState({
     basePrice: '100000',
     competitorCount: '3',
-    marketConditions: 'normal',
+    marketConditions: 'good',
     riskLevel: 'medium'
   });
   const [isLoading, setIsLoading] = useState(true);
@@ -122,9 +122,11 @@ export default function Simulation() {
 
   const getMarketConditionsText = (conditions: string) => {
     switch (conditions) {
+      case 'excellent':
+        return '优秀';
       case 'good':
         return '良好';
-      case 'normal':
+      case 'fair':
         return '一般';
       case 'poor':
         return '较差';
@@ -211,6 +213,55 @@ export default function Simulation() {
 
   return (
     <Layout>
+      {/* 项目信息展示 */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <Link
+                to="/projects"
+                className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5" />
+                <span>返回项目列表</span>
+              </Link>
+            </div>
+          </div>
+          
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 border border-blue-100">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div>
+                <label className="text-sm font-medium text-gray-600">项目ID</label>
+                <p className="text-lg font-semibold text-gray-900 mt-1">{project.id}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-600">项目名称</label>
+                <p className="text-lg font-semibold text-gray-900 mt-1">{project.name}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-600">项目预算</label>
+                <p className="text-lg font-semibold text-blue-600 mt-1">{formatCurrency(project.budget)}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-600">项目状态</label>
+                <p className="text-lg font-semibold text-green-600 mt-1">
+                  {project.status === 'active' ? '进行中' : 
+                   project.status === 'completed' ? '已完成' : 
+                   project.status === 'pending' ? '待开始' : '未知'}
+                </p>
+              </div>
+            </div>
+            
+            {project.description && (
+              <div className="mt-4 pt-4 border-t border-blue-200">
+                <label className="text-sm font-medium text-gray-600">项目描述</label>
+                <p className="text-gray-700 mt-1">{project.description}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+      
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* 模拟参数设置 */}
@@ -274,8 +325,9 @@ export default function Simulation() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required
                   >
+                    <option value="excellent">优秀</option>
                     <option value="good">良好</option>
-                    <option value="normal">一般</option>
+                    <option value="fair">一般</option>
                     <option value="poor">较差</option>
                   </select>
                 </div>

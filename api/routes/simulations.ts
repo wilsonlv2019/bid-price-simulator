@@ -223,25 +223,24 @@ router.get('/:id', async (req: Request, res: Response): Promise<void> => {
 router.post('/', async (req: Request, res: Response): Promise<void> => {
   try {
     const {
-      projectId,
-      name,
-      basePrice,
-      competitorCount,
-      marketConditions,
-      riskLevel
+      project_id,
+      base_price,
+      competitor_count,
+      market_conditions,
+      risk_level
     } = req.body;
 
     // Validate input
-    if (!projectId || !name || !basePrice || competitorCount === undefined) {
+    if (!project_id || !base_price || competitor_count === undefined) {
       res.status(400).json({
         success: false,
-        message: 'Project ID, name, base price, and competitor count are required'
+        message: 'Project ID, base price, and competitor count are required'
       });
       return;
     }
 
     // Validate numeric inputs
-    if (typeof basePrice !== 'number' || basePrice <= 0) {
+    if (typeof base_price !== 'number' || base_price <= 0) {
       res.status(400).json({
         success: false,
         message: 'Base price must be a positive number'
@@ -249,7 +248,7 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    if (typeof competitorCount !== 'number' || competitorCount < 0) {
+    if (typeof competitor_count !== 'number' || competitor_count < 0) {
       res.status(400).json({
         success: false,
         message: 'Competitor count must be a non-negative number'
@@ -258,18 +257,18 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
     }
 
     // Validate enum values
-    const validMarketConditions = ['stable', 'competitive', 'volatile'];
+    const validMarketConditions = ['excellent', 'good', 'fair', 'poor'];
     const validRiskLevels = ['low', 'medium', 'high'];
 
-    if (!validMarketConditions.includes(marketConditions)) {
+    if (!validMarketConditions.includes(market_conditions)) {
       res.status(400).json({
         success: false,
-        message: 'Invalid market conditions. Must be: stable, competitive, or volatile'
+        message: 'Invalid market conditions. Must be: excellent, good, fair, or poor'
       });
       return;
     }
 
-    if (!validRiskLevels.includes(riskLevel)) {
+    if (!validRiskLevels.includes(risk_level)) {
       res.status(400).json({
         success: false,
         message: 'Invalid risk level. Must be: low, medium, or high'
@@ -278,7 +277,7 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
     }
 
     // Verify project belongs to user and get budget
-    const project = await mockDataStore.getProjectById(projectId);
+    const project = await mockDataStore.getProjectById(project_id);
 
     if (!project || project.user_id !== req.user!.userId) {
       res.status(404).json({
@@ -290,20 +289,28 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
 
     // Create simulation record
     const simulation = await mockDataStore.createSimulation({
-      project_id: projectId,
-      name,
-      base_price: basePrice,
-      competitor_count: competitorCount,
-      market_conditions: marketConditions,
-      risk_level: riskLevel
+      project_id: project_id,
+      name: `Simulation ${Date.now()}`,
+      base_price: base_price,
+      competitor_count: competitor_count,
+      market_conditions: market_conditions,
+      risk_level: risk_level
     });
+
+    // Map market conditions to algorithm values
+    const marketConditionsMap: Record<string, 'stable' | 'competitive' | 'volatile'> = {
+      'excellent': 'stable',
+      'good': 'stable',
+      'fair': 'competitive',
+      'poor': 'volatile'
+    };
 
     // Run price simulation algorithm
     const simulationResult = PriceSimulator.calculateRecommendedPrice({
-      basePrice,
-      competitorCount,
-      marketConditions,
-      riskLevel,
+      basePrice: base_price,
+      competitorCount: competitor_count,
+      marketConditions: marketConditionsMap[market_conditions],
+      riskLevel: risk_level,
       budget: project.budget
     });
 
