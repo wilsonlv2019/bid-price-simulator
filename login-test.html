@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background-color: #0056b3; }
+        pre {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 3px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>投标价格模拟器 - 登录测试</h1>
+        
+        <div class="test-section info">
+            <h3>测试说明</h3>
+            <p>这个页面将测试登录功能是否正常工作。点击下面的按钮开始测试。</p>
+            <p><strong>测试账户:</strong> demo@example.com</p>
+            <p><strong>密码:</strong> password123</p>
+        </div>
+
+        <div class="test-section">
+            <h3>步骤 1: 测试后端API连接</h3>
+            <button onclick="testBackendConnection()">测试后端连接</button>
+            <div id="backend-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>步骤 2: 测试登录API</h3>
+            <button onclick="testLogin()">测试登录</button>
+            <div id="login-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>步骤 3: 跳转到前端应用</h3>
+            <button onclick="goToApp()">打开应用首页</button>
+            <button onclick="goToLogin()">打开登录页面</button>
+            <button onclick="goToDashboard()">直接访问Dashboard</button>
+        </div>
+
+        <div class="test-section">
+            <h3>测试日志</h3>
+            <div id="log" style="max-height: 300px; overflow-y: auto;"></div>
+        </div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.innerHTML = `<strong>[${timestamp}]</strong> ${message}`;
+            logEntry.style.margin = '5px 0';
+            logEntry.style.padding = '5px';
+            logEntry.style.borderRadius = '3px';
+            
+            if (type === 'success') {
+                logEntry.style.backgroundColor = '#d4edda';
+                logEntry.style.color = '#155724';
+            } else if (type === 'error') {
+                logEntry.style.backgroundColor = '#f8d7da';
+                logEntry.style.color = '#721c24';
+            } else {
+                logEntry.style.backgroundColor = '#f8f9fa';
+                logEntry.style.color = '#495057';
+            }
+            
+            logDiv.appendChild(logEntry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        async function testBackendConnection() {
+            const resultDiv = document.getElementById('backend-result');
+            log('开始测试后端连接...');
+            
+            try {
+                const response = await fetch('http://localhost:3001/api/health', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.text();
+                    resultDiv.innerHTML = `<div class="success"><strong>✅ 后端连接成功!</strong><br>响应: ${data}</div>`;
+                    log('后端连接测试成功', 'success');
+                } else {
+                    resultDiv.innerHTML = `<div class="error"><strong>❌ 后端连接失败!</strong><br>状态码: ${response.status}</div>`;
+                    log(`后端连接失败，状态码: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error"><strong>❌ 连接错误!</strong><br>错误: ${error.message}</div>`;
+                log(`连接错误: ${error.message}`, 'error');
+            }
+        }
+
+        async function testLogin() {
+            const resultDiv = document.getElementById('login-result');
+            log('开始测试登录API...');
+            
+            try {
+                const response = await fetch('http://localhost:3001/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: 'demo@example.com',
+                        password: 'password123'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <strong>✅ 登录成功!</strong><br>
+                            <strong>用户:</strong> ${data.data.user.name}<br>
+                            <strong>邮箱:</strong> ${data.data.user.email}<br>
+                            <strong>Token:</strong> ${data.data.token.substring(0, 20)}...<br>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                    log('登录API测试成功', 'success');
+                    
+                    // 保存token到localStorage模拟前端行为
+                    localStorage.setItem('auth-token', data.data.token);
+                    localStorage.setItem('auth-user', JSON.stringify(data.data.user));
+                    log('Token和用户信息已保存到localStorage', 'success');
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <strong>❌ 登录失败!</strong><br>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                    log('登录API测试失败', 'error');
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error"><strong>❌ 登录错误!</strong><br>错误: ${error.message}</div>`;
+                log(`登录错误: ${error.message}`, 'error');
+            }
+        }
+
+        function goToApp() {
+            log('跳转到应用首页...');
+            window.open('http://localhost:5173/', '_blank');
+        }
+
+        function goToLogin() {
+            log('跳转到登录页面...');
+            window.open('http://localhost:5173/login', '_blank');
+        }
+
+        function goToDashboard() {
+            log('直接访问Dashboard...');
+            window.open('http://localhost:5173/dashboard', '_blank');
+        }
+
+        // 页面加载时显示当前localStorage状态
+        window.onload = function() {
+            log('页面加载完成');
+            const token = localStorage.getItem('auth-token');
+            const user = localStorage.getItem('auth-user');
+            
+            if (token) {
+                log(`发现已保存的Token: ${token.substring(0, 20)}...`, 'info');
+            }
+            if (user) {
+                log(`发现已保存的用户信息: ${user}`, 'info');
+            }
+        };
+    </script>
+</body>
+</html>

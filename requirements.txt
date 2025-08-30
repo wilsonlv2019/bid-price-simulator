@@ -1,0 +1,25 @@
+# Streamlit Web框架
+streamlit==1.28.1
+
+# 机器学习库
+scikit-learn==1.3.2
+xgboost==2.0.2
+# lightgbm==4.1.0  # 暂时注释，稍后单独安装
+tensorflow==2.15.0
+
+# 数据处理
+numpy==1.24.3
+pandas==2.1.4
+
+# 可视化
+matplotlib==3.8.2
+plotly==5.17.0
+seaborn==0.13.0
+
+# 数学公式渲染 (使用streamlit内置LaTeX支持)
+# streamlit已内置LaTeX渲染功能，无需额外包
+
+# 其他工具
+joblib==1.3.2
+scipy==1.11.4
+imbalanced-learn==0.11.0
