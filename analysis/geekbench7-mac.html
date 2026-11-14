@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Geekbench 7：Mac 代际涨幅与性价比</title>
+<style>
+  :root {
+    --bg: #f3efe6;
+    --paper: #fbf8f2;
+    --ink: #1b1915;
+    --muted: #6d655c;
+    --faint: #9c9286;
+    --line: #e2d8cb;
+    --navy: #1c3d5a;
+    --rust: #8f3d1b;
+    --green: #1d5c43;
+    --gold: #8a5a12;
+    --neg: #7a2430;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Avenir Next", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "WenQuanYi Micro Hei", "Segoe UI", sans-serif;
+    font-size: 16px;
+    line-height: 1.55;
+  }
+  a { color: var(--navy); }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 32px 22px 80px; }
+  header.top { display: flex; justify-content: space-between; gap: 24px; align-items: flex-end; border-bottom: 1px solid var(--ink); padding-bottom: 18px; }
+  .kicker { letter-spacing: 0.14em; text-transform: uppercase; font-size: 12px; color: var(--muted); margin: 0 0 8px; }
+  h1 { font-family: Palatino, "Iowan Old Style", "Songti SC", "Noto Serif SC", Georgia, serif; font-weight: 600; font-size: 34px; line-height: 1.15; margin: 0; letter-spacing: -0.02em; }
+  .nav { display: flex; flex-wrap: wrap; gap: 8px 14px; font-size: 13px; padding-top: 8px; }
+  .nav a { text-decoration: none; border-bottom: 1px solid transparent; }
+  .nav a:hover { border-bottom-color: var(--navy); }
+  .lead { font-size: 17.5px; max-width: 74ch; margin: 22px 0 8px; }
+  .findings { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 18px; margin: 22px 0 8px; }
+  .findings article { padding-top: 10px; border-top: 2px solid var(--ink); }
+  .findings h2 { font-size: 13px; margin: 0 0 6px; color: var(--muted); font-weight: 600; letter-spacing: 0.04em; }
+  .findings p { margin: 0; font-size: 15px; }
+  .findings strong { font-variant-numeric: tabular-nums; }
+  section { margin-top: 46px; }
+  section > h2 { font-family: Palatino, "Iowan Old Style", "Songti SC", Georgia, serif; font-size: 26px; font-weight: 600; margin: 0 0 6px; }
+  .deck { color: var(--muted); margin: 0 0 16px; max-width: 78ch; }
+  .chart {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    padding: 8px 8px 2px;
+  }
+  .chart svg { width: 100%; height: auto; display: block; }
+  .caption { color: var(--faint); font-size: 12.5px; margin: 8px 0 0; max-width: 90ch; }
+  .row2 { display: grid; grid-template-columns: 1.35fr 0.85fr; gap: 22px; align-items: start; }
+  .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+  .toolbar { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 12px; }
+  button.chip, button.metric {
+    appearance: none; border: 1px solid var(--line); background: transparent;
+    color: var(--ink); font: inherit; font-size: 13px; padding: 5px 10px; cursor: pointer;
+  }
+  button.chip[aria-pressed="true"], button.metric[aria-pressed="true"] {
+    background: var(--ink); color: var(--paper); border-color: var(--ink);
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; font-variant-numeric: tabular-nums; }
+  #singleSplit, #stepTable { min-width: 520px; }
+  th, td { text-align: right; padding: 7px 8px; border-bottom: 1px solid var(--line); vertical-align: baseline; }
+  th:first-child, td:first-child, th.left, td.left { text-align: left; }
+  th { font-weight: 600; color: var(--muted); font-size: 12px; letter-spacing: 0.02em; }
+  td.pos { color: var(--green); }
+  td.neg { color: var(--neg); }
+  td.flat { color: var(--muted); }
+  .barwrap { height: 8px; background: #efe8dc; margin-top: 4px; }
+  .bar { height: 8px; background: var(--navy); }
+  .bar.alt { background: var(--rust); }
+  .bar.dim { background: var(--gold); }
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .note {
+    font-size: 14px; background: var(--paper); border-left: 3px solid var(--rust);
+    padding: 10px 12px; margin: 12px 0 0;
+  }
+  input[type="search"] {
+    font: inherit; font-size: 14px; padding: 7px 10px; border: 1px solid var(--line);
+    background: var(--paper); width: min(360px, 100%); color: var(--ink);
+  }
+  .scroll { overflow-x: auto; border: 1px solid var(--line); background: var(--paper); }
+  #tip {
+    position: fixed; z-index: 20; pointer-events: none; max-width: 280px;
+    background: var(--ink); color: #f6f1e8; font-size: 12.5px; line-height: 1.45;
+    padding: 8px 10px; display: none;
+  }
+  footer { margin-top: 48px; color: var(--muted); font-size: 13px; border-top: 1px solid var(--line); padding-top: 16px; }
+  footer h2 { font-size: 16px; color: var(--ink); margin: 18px 0 6px; }
+  @media (max-width: 860px) {
+    h1 { font-size: 28px; }
+    .findings, .row2, .row3, .split { grid-template-columns: 1fr; }
+    header.top { flex-direction: column; align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <p class="kicker">Geekbench 7 · Apple silicon · 2020–2026</p>
+      <h1>Mac 每一代涨了多少，<br>以及这涨幅值不值钱</h1>
+    </div>
+    <nav class="nav">
+      <a href="#single">单核</a>
+      <a href="#lines">产品线</a>
+      <a href="#gpu">图形</a>
+      <a href="#value">性价比</a>
+      <a href="#table">全部机型</a>
+      <a href="#method">口径</a>
+    </nav>
+  </header>
+
+  <p class="lead">榜单里的 77 条 Apple 芯片记录说明：单核从 M1 到 M6 累计涨了 85%，但这 85% 在 M3 之前几乎全是频率；多核看起来跳得更大，拆开之后，有几代只是在堆核心。用美国发布价去除分数，最划算的多核仍然是 599 美元的 M4 Mac mini，而不是更贵的新旗舰。</p>
+
+  <div class="findings">
+    <article>
+      <h2>单核 · 频率与架构</h2>
+      <p>基础芯片单核 <strong>2164 → 4004（+85%）</strong>。M1 到 M3，每 GHz 分数停在 670–676；M4 起每 GHz 才明显上升。M6 Mac mini 的单核已经高于 M5 Max。</p>
+    </article>
+    <article>
+      <h2>多核 · 最陡与最平</h2>
+      <p>14 英寸 Pro 入门多核 <strong>+164%</strong>（M1→M5）。最平的一跳是 16 英寸 M2 Pro → M3 Pro，<strong>只 +3.3%</strong>，核心数没变。</p>
+    </article>
+    <article>
+      <h2>性价比 · 谁更值</h2>
+      <p>多核 / 美元第一是 <strong>M4 Mac mini，25.5 分</strong>。M6 mini 多核性价比略降，Metal 性价比反而更高。M5 Ultra 入门的多核性价比低于 M3 Ultra 入门。</p>
+    </article>
+  </div>
+
+  <section id="single">
+    <h2>单核：M4 之前，涨的是频率</h2>
+    <p class="deck">单核几乎不受核心数影响，最适合看「这一代芯片本身快了多少」。基础芯片取每一代入门机里的代表分；峰值取该代单核最高的一条。M3 没有 MacBook Air 记录，基础芯片用的是 14 英寸 MacBook Pro；M6 目前只有 Mac mini。</p>
+    <div class="chart" id="singleChart"></div>
+    <p class="caption">纵轴：Geekbench 7 单核分数。横轴：芯片代。海军蓝是基础芯片，锈红是该代峰值。来源：Geekbench7Mac.xlsx，每条是榜单中的一条记录，不是多次跑分的均值。</p>
+    <div class="split" style="margin-top:16px">
+      <div>
+        <div class="scroll"><table id="singleSplit"></table></div>
+        <p class="caption">拆解公式：单核比值 ≈ 标称频率比值 ×（单核/GHz）比值。百分比不能直接相加。频率取自表内规格字符串；M1 峰值沿用同代 3.2 GHz。</p>
+      </div>
+      <div class="note" id="singleNote"></div>
+    </div>
+  </section>
+
+  <section id="lines">
+    <h2>产品线：多核涨幅里有多少是堆核心</h2>
+    <p class="deck">同一条产品线只比较「该档入门配置」，避免拿满血选配去对上一代入门。点一条产品线，左边是分数，右边把涨幅拆成核心数和每核产出。缺代的地方直接留空，例如没有 M3 Air、没有 M4 Ultra、Mac mini 基础款没有 M3 / M5。</p>
+    <div class="toolbar" id="lineButtons"></div>
+    <div class="toolbar" id="metricButtons"></div>
+    <p class="deck" id="lineNote"></p>
+    <div class="row2">
+      <div>
+        <div class="chart" id="lineChart"></div>
+        <p class="caption" id="lineCaption"></p>
+      </div>
+      <div>
+        <div class="scroll"><table id="stepTable"></table></div>
+        <div class="chart" id="valueMini" style="margin-top:12px"></div>
+        <p class="caption">下图纵轴是该档入门价的多核性价比（多核分数 / 美元）。价格口径见文末。</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="gpu">
+    <h2>图形：同核数才算一代，M5 的 GPU 跳得比 CPU 狠</h2>
+    <p class="deck">总 Metal 分会被 GPU 核数带跑。下面三张图都画「每颗 GPU 核的 Metal」，总分配在点上。10 核这一档从 M4 到 M5 每核 +34%；80 核 Ultra 从 M3 到 M5（中间没有 M4 Ultra）每核 +39%。</p>
+    <div class="row3" id="gpuCharts"></div>
+    <p class="caption">纵轴：Metal 分数 / GPU 核数。10 核档依次是 M1 Air 8 核、M2 mini 10 核、M3 MacBook Pro 10 核、M4 mini 10 核、M5 MacBook Pro 10 核、M6 mini 12 核。40 核与 80 核取该核数的最高 Metal。M1 Ultra 的表内没有 GPU 核数，不放进每核图。</p>
+  </section>
+
+  <section id="value">
+    <h2>性价比：分数除以美国发布价</h2>
+    <p class="deck">性价比 = Geekbench 分数 / 该芯片档位的美国入门发布价（美元）。只收录核对过入门规格的配置。虚线是等性价比：同样的斜率，点越靠上越值。这不是国行现价，也不含内存和硬盘加价。</p>
+    <div class="toolbar" id="valueMetrics"></div>
+    <div class="row2">
+      <div>
+        <div id="scatterLegend" class="toolbar"></div>
+        <div class="chart" id="scatter"></div>
+        <p class="caption" id="scatterCap">横轴：美国入门发布价（美元）。纵轴：Geekbench 7 分数。虚线为等性价比。</p>
+      </div>
+      <div class="scroll" style="max-height: 560px; overflow: auto;">
+        <table id="rankTable"></table>
+      </div>
+    </div>
+    <div class="note" id="valueNote"></div>
+  </section>
+
+  <section id="table">
+    <h2>表内全部 Apple 芯片记录</h2>
+    <p class="deck">77 条，四项分数按机型 + 芯片规格对齐。Intel Mac 在原表里，但不进入代际和性价比：配置价差大，而且问题问的是苹果芯片换代。</p>
+    <p><input id="q" type="search" placeholder="筛选机型或芯片，例如 M5 Max、Air、Studio" /></p>
+    <div class="scroll">
+      <table id="allTable"></table>
+    </div>
+  </section>
+
+  <footer id="method">
+    <h2>口径与价格</h2>
+    <p>分数来自 Geekbench7Mac.xlsx 的 single core、multi core、OpenCL、Metal 四张表。同一机型的不同核数各算一条。代际比率用后一代除以前一代再减 1。多核拆解满足：分数比 = CPU 核数比 × 每核分数比。Metal 同理，换成 GPU 核数。单核拆解把核数换成表内标称频率。</p>
+    <p>性价比只用美国官网该档<strong>入门配置的发布价</strong>。M5 14 英寸 MacBook Pro 用 2025 年 10 月的 1599 美元；2026 年 3 月起标配改为 1TB、标价 1699 美元，按新价多核性价比仍高于 M4。M2 Air 用 2022 年发布价 1199 美元，后来的降价不回写。M5 Studio / Ultra / mini Pro 的入门核数，按新闻稿「最高 xx 核」对应表里的较低核数：M5 Max 18 核 CPU / 32 核 GPU、M5 Ultra 30 核 CPU / 64 核 GPU、M5 Pro 15 核 CPU / 16 核 GPU。这些档的多核在同一 CPU 核数下不随 GPU 核数变化，所以多核性价比不依赖 GPU 分档；Metal 性价比用的是这一档的 Metal。</p>
+    <p>价格出处：Apple Newsroom（M4 Air 与 Mac Studio，2025-03-05；M5 MacBook Pro，2025-10-15；M5 Air 与 M5 Pro / Max MacBook Pro，2026-03；M6 Mac mini 与 M5 Mac Studio，2026-09-22）；M1 Pro / Max 分档价采用 Ars Technica 2021-10 的配置表；M3 分档采用 Macworld 2023-10 的配置表；M4 MacBook Pro / Mac mini / iMac 起售价与上一代持平（M4 Pro mini 为 1399 美元）。MacBook Neo 现价取 apple.com/shop 的 699 美元。Mac Pro（2023）M2 Ultra 起售价 6999 美元。Mac Studio M1 Max / M1 Ultra 为 1999 / 3999 美元。</p>
+    <p>原表没有 M3 MacBook Air，也没有 M4 Ultra。M1 若干行没有核数，产品线里补进的是当时公开的入门核数，并在说明里标出。16 英寸 M1 Pro 那一行写成 10 核 GPU，与公开的 16 核 GPU 不符，且没有 Metal，图形对比不用它。</p>
+  </footer>
+</div>
+<div id="tip"></div>
+<script>
+const SCORES = [{"product": "Mac mini (2026)", "chip": "M6", "year": 2026, "ghz": 4.8, "cpu": 12, "gpu": 12, "single": 4004, "multi": 21878, "opencl": 57592, "metal": 89402}, {"product": "Mac Studio (2026)", "chip": "M5 Max", "year": 2026, "ghz": 4.6, "cpu": 18, "gpu": 32, "single": 3734, "multi": 34987, "opencl": 127194, "metal": 191782}, {"product": "Mac Studio (2026)", "chip": "M5 Max", "year": 2026, "ghz": 4.6, "cpu": 18, "gpu": 40, "single": 3734, "multi": 34987, "opencl": 153315, "metal": 239330}, {"product": "Mac Studio (2026)", "chip": "M5 Ultra", "year": 2026, "ghz": 4.6, "cpu": 36, "gpu": 80, "single": 3727, "multi": 51848, "opencl": 217444, "metal": 343652}, {"product": "MacBook Pro (16-inch, 2026)", "chip": "M5 Max", "year": 2026, "ghz": 4.6, "cpu": 18, "gpu": 40, "single": 3721, "multi": 34990, "opencl": 152852, "metal": 239439}, {"product": "MacBook Pro (16-inch, 2026)", "chip": "M5 Max", "year": 2026, "ghz": 4.6, "cpu": 18, "gpu": 32, "single": 3721, "multi": 34990, "opencl": 126002, "metal": 193888}, {"product": "Mac Studio (2026)", "chip": "M5 Ultra", "year": 2026, "ghz": 4.6, "cpu": 30, "gpu": 64, "single": 3715, "multi": 47126, "opencl": 199323, "metal": 334375}, {"product": "MacBook Pro (14-inch, 2026)", "chip": "M5 Max", "year": 2026, "ghz": 4.6, "cpu": 18, "gpu": 40, "single": 3694, "multi": 34595, "opencl": 153400, "metal": 240329}, {"product": "MacBook Pro (14-inch, 2026)", "chip": "M5 Max", "year": 2026, "ghz": 4.6, "cpu": 18, "gpu": 32, "single": 3694, "multi": 34595, "opencl": 126349, "metal": 194689}, {"product": "MacBook Pro (16-inch, 2026)", "chip": "M5 Pro", "year": 2026, "ghz": 4.6, "cpu": 18, "gpu": 20, "single": 3691, "multi": 33561, "opencl": 87889, "metal": 136249}, {"product": "MacBook Pro (14-inch, 2026)", "chip": "M5 Pro", "year": 2026, "ghz": 4.6, "cpu": 15, "gpu": 16, "single": 3681, "multi": 29550, "opencl": 78392, "metal": 125179}, {"product": "MacBook Pro (14-inch, 2026)", "chip": "M5 Pro", "year": 2026, "ghz": 4.6, "cpu": 18, "gpu": 20, "single": 3679, "multi": 33487, "opencl": 88171, "metal": 135984}, {"product": "Mac mini (2026)", "chip": "M5 Pro", "year": 2026, "ghz": 4.6, "cpu": 15, "gpu": 16, "single": 3669, "multi": 29569, "opencl": 78228, "metal": 126240}, {"product": "Mac mini (2026)", "chip": "M5 Pro", "year": 2026, "ghz": 4.6, "cpu": 18, "gpu": 20, "single": 3660, "multi": 33400, "opencl": 86656, "metal": 137305}, {"product": "MacBook Pro (14-inch, 2025)", "chip": "M5", "year": 2025, "ghz": 4.6, "cpu": 10, "gpu": 10, "single": 3649, "multi": 17951, "opencl": 46299, "metal": 72804}, {"product": "MacBook Air (15-inch, 2026)", "chip": "M5", "year": 2026, "ghz": 4.5, "cpu": 10, "gpu": 10, "single": 3579, "multi": 17091, "opencl": 45371, "metal": 71185}, {"product": "MacBook Air (13-inch, 2026)", "chip": "M5", "year": 2026, "ghz": 4.5, "cpu": 10, "gpu": 10, "single": 3578, "multi": 17057, "opencl": 45153, "metal": 70648}, {"product": "MacBook Air (13-inch, 2026)", "chip": "M5", "year": 2026, "ghz": 4.5, "cpu": 10, "gpu": 8, "single": 3578, "multi": 17057, "opencl": 40304, "metal": 65706}, {"product": "Mac Studio (2025)", "chip": "M4 Max", "year": 2025, "ghz": 4.5, "cpu": 14, "gpu": 32, "single": 3499, "multi": 25889, "opencl": 102061, "metal": 169619}, {"product": "Mac Studio (2025)", "chip": "M4 Max", "year": 2025, "ghz": 4.5, "cpu": 16, "gpu": 40, "single": 3497, "multi": 29109, "opencl": 121826, "metal": 203974}, {"product": "MacBook Pro (16-inch, 2024)", "chip": "M4 Max", "year": 2024, "ghz": 4.5, "cpu": 14, "gpu": 32, "single": 3406, "multi": 25437, "opencl": 102154, "metal": 169039}, {"product": "MacBook Pro (16-inch, 2024)", "chip": "M4 Max", "year": 2024, "ghz": 4.5, "cpu": 16, "gpu": 40, "single": 3380, "multi": 28368, "opencl": 117715, "metal": 205513}, {"product": "MacBook Pro (16-inch, 2024)", "chip": "M4 Pro", "year": 2024, "ghz": 4.5, "cpu": 14, "gpu": 20, "single": 3372, "multi": 24835, "opencl": 69481, "metal": 115301}, {"product": "MacBook Pro (14-inch, 2024)", "chip": "M4 Max", "year": 2024, "ghz": 4.5, "cpu": 16, "gpu": 40, "single": 3352, "multi": 28721, "opencl": 121618, "metal": 207103}, {"product": "MacBook Pro (14-inch, 2024)", "chip": "M4 Max", "year": 2024, "ghz": 4.5, "cpu": 14, "gpu": 32, "single": 3347, "multi": 25410, "opencl": 102311, "metal": 170439}, {"product": "MacBook Pro (14-inch, 2024)", "chip": "M4 Pro", "year": 2024, "ghz": 4.5, "cpu": 14, "gpu": 20, "single": 3343, "multi": 24748, "opencl": 69057, "metal": 114169}, {"product": "MacBook Pro (14-inch, 2024)", "chip": "M4 Pro", "year": 2024, "ghz": 4.5, "cpu": 12, "gpu": 16, "single": 3326, "multi": 21646, "opencl": 61096, "metal": 102673}, {"product": "Mac mini (2024)", "chip": "M4 Pro", "year": 2024, "ghz": 4.5, "cpu": 12, "gpu": 16, "single": 3323, "multi": 21967, "opencl": 59498, "metal": 102247}, {"product": "Mac mini (2024)", "chip": "M4 Pro", "year": 2024, "ghz": 4.5, "cpu": 14, "gpu": 20, "single": 3300, "multi": 24833, "opencl": 68736, "metal": 115619}, {"product": "Mac mini (2024)", "chip": "M4", "year": 2024, "ghz": 4.4, "cpu": 10, "gpu": 10, "single": 3278, "multi": 15295, "opencl": 34491, "metal": 54223}, {"product": "iMac (24-inch, 2024)", "chip": "M4", "year": 2024, "ghz": 4.4, "cpu": 10, "gpu": 10, "single": 3244, "multi": 15395, "opencl": 33087, "metal": 52261}, {"product": "MacBook Pro (14-inch, 2024)", "chip": "M4", "year": 2024, "ghz": 4.4, "cpu": 10, "gpu": 10, "single": 3240, "multi": 15162, "opencl": 34275, "metal": 53962}, {"product": "MacBook Air (15-inch, 2025)", "chip": "M4", "year": 2025, "ghz": 4.4, "cpu": 10, "gpu": 10, "single": 3204, "multi": 15005, "opencl": 32732, "metal": 52268}, {"product": "MacBook Air (13-inch, 2025)", "chip": "M4", "year": 2025, "ghz": 4.4, "cpu": 10, "gpu": 8, "single": 3203, "multi": 15030, "opencl": 29170, "metal": 47696}, {"product": "MacBook Air (13-inch, 2025)", "chip": "M4", "year": 2025, "ghz": 4.4, "cpu": 10, "gpu": 10, "single": 3203, "multi": 15030, "opencl": 33110, "metal": 52805}, {"product": "iMac (24-inch, 2024)", "chip": "M4", "year": 2024, "ghz": 4.4, "cpu": 8, "gpu": 8, "single": 3174, "multi": 13366, "opencl": 28736, "metal": 47302}, {"product": "MacBook Neo", "chip": "A18", "year": null, "ghz": 4.0, "cpu": 6, "gpu": 5, "single": 2929, "multi": 7274, "opencl": 18540, "metal": 31149}, {"product": "Mac Studio (2025)", "chip": "M3 Ultra", "year": 2025, "ghz": 4.0, "cpu": 28, "gpu": 60, "single": 2922, "multi": 35254, "opencl": 127471, "metal": 224617}, {"product": "Mac Studio (2025)", "chip": "M3 Ultra", "year": 2025, "ghz": 4.0, "cpu": 32, "gpu": 80, "single": 2920, "multi": 39139, "opencl": 141476, "metal": 247973}, {"product": "MacBook Pro (16-inch, Nov 2023)", "chip": "M3 Max", "year": 2023, "ghz": 4.1, "cpu": 16, "gpu": 40, "single": 2822, "multi": 24694, "opencl": 100559, "metal": 167148}, {"product": "MacBook Pro (16-inch, Nov 2023)", "chip": "M3 Max", "year": 2023, "ghz": 4.1, "cpu": 14, "gpu": 30, "single": 2822, "multi": 22065, "opencl": 81209, "metal": 131551}, {"product": "MacBook Pro (16-inch, Nov 2023)", "chip": "M3 Pro", "year": 2023, "ghz": 4.1, "cpu": 12, "gpu": 18, "single": 2818, "multi": 16950, "opencl": 48836, "metal": 76874}, {"product": "MacBook Pro (14-inch, Nov 2023)", "chip": "M3 Max", "year": 2023, "ghz": 4.1, "cpu": 14, "gpu": 30, "single": 2812, "multi": 22156, "opencl": 81189, "metal": 132429}, {"product": "MacBook Pro (14-inch, Nov 2023)", "chip": "M3 Max", "year": 2023, "ghz": 4.1, "cpu": 16, "gpu": 40, "single": 2805, "multi": 24510, "opencl": 100951, "metal": 164358}, {"product": "MacBook Pro (14-inch, Nov 2023)", "chip": "M3 Pro", "year": 2023, "ghz": 4.1, "cpu": 11, "gpu": 14, "single": 2802, "multi": 15267, "opencl": 43309, "metal": 70074}, {"product": "MacBook Pro (14-inch, Nov 2023)", "chip": "M3 Pro", "year": 2023, "ghz": 4.1, "cpu": 12, "gpu": 18, "single": 2798, "multi": 16638, "opencl": 48596, "metal": 77064}, {"product": "MacBook Pro (14-inch, Nov 2023)", "chip": "M3", "year": 2023, "ghz": 4.1, "cpu": 8, "gpu": 10, "single": 2771, "multi": 11522, "opencl": 28938, "metal": 47845}, {"product": "iMac (24-inch, 2023)", "chip": "M3", "year": 2023, "ghz": 4.1, "cpu": 8, "gpu": 8, "single": 2751, "multi": 11646, "opencl": 25022, "metal": 43210}, {"product": "iMac (24-inch, 2023)", "chip": "M3", "year": 2023, "ghz": 4.1, "cpu": 8, "gpu": 10, "single": 2751, "multi": 11646, "opencl": 29406, "metal": 48180}, {"product": "Mac Pro (2023)", "chip": "M2 Ultra", "year": 2023, "ghz": 3.7, "cpu": 24, "gpu": 60, "single": 2583, "multi": 28749, "opencl": null, "metal": null}, {"product": "Mac Pro (2023)", "chip": "M2 Ultra", "year": 2023, "ghz": 3.7, "cpu": 24, "gpu": 76, "single": 2583, "multi": 28749, "opencl": 127613, "metal": null}, {"product": "Mac Studio (2023)", "chip": "M2 Max", "year": 2023, "ghz": 3.7, "cpu": 12, "gpu": 38, "single": 2553, "multi": 17316, "opencl": 87964, "metal": 145172}, {"product": "Mac Studio (2023)", "chip": "M2 Ultra", "year": 2023, "ghz": 3.7, "cpu": 24, "gpu": 60, "single": 2550, "multi": 28154, "opencl": null, "metal": null}, {"product": "Mac Studio (2023)", "chip": "M2 Ultra", "year": 2023, "ghz": 3.7, "cpu": 24, "gpu": 76, "single": 2550, "multi": 28154, "opencl": 128183, "metal": 221104}, {"product": "MacBook Pro (16-inch, 2023)", "chip": "M2 Max", "year": 2023, "ghz": 3.7, "cpu": 12, "gpu": 30, "single": 2494, "multi": 17049, "opencl": null, "metal": null}, {"product": "MacBook Pro (16-inch, 2023)", "chip": "M2 Max", "year": 2023, "ghz": 3.7, "cpu": 12, "gpu": 38, "single": 2494, "multi": 17049, "opencl": 87188, "metal": 140164}, {"product": "MacBook Pro (16-inch, 2023)", "chip": "M2 Pro", "year": 2023, "ghz": 3.5, "cpu": 12, "gpu": 19, "single": 2423, "multi": 16401, "opencl": 49108, "metal": 82788}, {"product": "Mac mini (2023)", "chip": "M2 Pro", "year": 2023, "ghz": 3.5, "cpu": 10, "gpu": 16, "single": 2420, "multi": 13914, "opencl": 43758, "metal": 74168}, {"product": "MacBook Pro (14-inch, 2023)", "chip": "M2 Pro", "year": 2023, "ghz": 3.5, "cpu": 12, "gpu": 19, "single": 2417, "multi": 16550, "opencl": 49542, "metal": 82817}, {"product": "Mac mini (2023)", "chip": "M2 Pro", "year": 2023, "ghz": 3.5, "cpu": 12, "gpu": 19, "single": 2410, "multi": 16385, "opencl": 49289, "metal": 82692}, {"product": "Mac mini (2023)", "chip": "M2", "year": 2023, "ghz": 3.5, "cpu": 8, "gpu": 10, "single": 2401, "multi": 9744, "opencl": 26303, "metal": 43540}, {"product": "MacBook Pro (14-inch, 2023)", "chip": "M2 Pro", "year": 2023, "ghz": 3.5, "cpu": 10, "gpu": 16, "single": 2398, "multi": 13659, "opencl": 43893, "metal": 74371}, {"product": "MacBook Pro (13-inch, 2022)", "chip": "M2", "year": 2022, "ghz": null, "cpu": null, "gpu": null, "single": 2367, "multi": 9680, "opencl": 26172, "metal": 43266}, {"product": "MacBook Air (15-inch, 2023)", "chip": "M2", "year": 2023, "ghz": 3.5, "cpu": 8, "gpu": 10, "single": 2345, "multi": 9575, "opencl": 25661, "metal": 42649}, {"product": "MacBook Air (2022)", "chip": "M2", "year": 2022, "ghz": null, "cpu": null, "gpu": null, "single": 2345, "multi": 9642, "opencl": 23421, "metal": 39708}, {"product": "Mac Studio", "chip": "M1 Max", "year": null, "ghz": null, "cpu": null, "gpu": null, "single": 2231, "multi": 14336, "opencl": 60281, "metal": 99153}, {"product": "Mac Studio", "chip": "M1 Ultra", "year": null, "ghz": null, "cpu": null, "gpu": null, "single": 2219, "multi": 23521, "opencl": 95630, "metal": 147083}, {"product": "MacBook Pro (16-inch, 2021)", "chip": "M1 Max", "year": 2021, "ghz": null, "cpu": null, "gpu": null, "single": 2215, "multi": 14161, "opencl": 65775, "metal": 109067}, {"product": "MacBook Pro (14-inch, 2021)", "chip": "M1 Max", "year": 2021, "ghz": null, "cpu": null, "gpu": null, "single": 2213, "multi": 14122, "opencl": 63150, "metal": 106190}, {"product": "MacBook Pro (14-inch, 2021)", "chip": "M1 Pro", "year": 2021, "ghz": null, "cpu": null, "gpu": null, "single": 2201, "multi": 13912, "opencl": 38143, "metal": 65568}, {"product": "MacBook Pro (16-inch, 2021)", "chip": "M1 Pro", "year": 2021, "ghz": 3.2, "cpu": 10, "gpu": 10, "single": 2199, "multi": 13884, "opencl": null, "metal": null}, {"product": "MacBook Pro (14-inch, 2021)", "chip": "M1 Pro", "year": 2021, "ghz": null, "cpu": null, "gpu": null, "single": 2192, "multi": 11212, "opencl": 35477, "metal": 61151}, {"product": "Mac mini (Late 2020)", "chip": "M1", "year": 2020, "ghz": null, "cpu": null, "gpu": null, "single": 2191, "multi": 8551, "opencl": 18360, "metal": 28496}, {"product": "MacBook Pro (13-inch Late 2020)", "chip": "M1", "year": 2020, "ghz": null, "cpu": null, "gpu": null, "single": 2170, "multi": 8345, "opencl": 18153, "metal": 28289}, {"product": "iMac (24-inch Mid 2021)", "chip": "M1", "year": 2021, "ghz": null, "cpu": null, "gpu": null, "single": 2166, "multi": 8347, "opencl": 17771, "metal": 27901}, {"product": "MacBook Air (Late 2020)", "chip": "M1", "year": 2020, "ghz": 3.2, "cpu": 8, "gpu": 8, "single": 2164, "multi": 8228, "opencl": 18300, "metal": 28191}, {"product": "MacBook Air (Late 2020)", "chip": "M1", "year": 2020, "ghz": 3.2, "cpu": 8, "gpu": 7, "single": 2164, "multi": 8228, "opencl": 16621, "metal": 26902}];
+
+const singleBase = [
+  { gen: "M1", year: "2020", product: "MacBook Air", ghz: 3.2, y: 2164 },
+  { gen: "M2", year: "2022", product: "MacBook Air", ghz: 3.5, y: 2345 },
+  { gen: "M3", year: "2023", product: "14 英寸 MacBook Pro", ghz: 4.1, y: 2771 },
+  { gen: "M4", year: "2025", product: "13 英寸 MacBook Air", ghz: 4.4, y: 3203 },
+  { gen: "M5", year: "2026", product: "13 英寸 MacBook Air", ghz: 4.5, y: 3578 },
+  { gen: "M6", year: "2026", product: "Mac mini", ghz: 4.8, y: 4004 }
+];
+const singlePeak = [
+  { gen: "M1", year: "2022", product: "M1 Max · Studio", ghz: 3.2, y: 2231 },
+  { gen: "M2", year: "2023", product: "M2 Ultra · Mac Pro", ghz: 3.7, y: 2583 },
+  { gen: "M3", year: "2025", product: "M3 Ultra · Studio", ghz: 4.0, y: 2922 },
+  { gen: "M4", year: "2025", product: "M4 Max · Studio", ghz: 4.5, y: 3499 },
+  { gen: "M5", year: "2026", product: "M5 Max · Studio", ghz: 4.6, y: 3734 },
+  { gen: "M6", year: "2026", product: "M6 · Mac mini", ghz: 4.8, y: 4004 }
+];
+
+const ladders = [
+  {
+    id: "mbp14pro",
+    name: "14 英寸 Pro 入门",
+    note: "每一代都是该尺寸 Pro 的入门核数。M1 用多核 11212 的那一档，对应 2021 年 1999 美元的 8 核 CPU；表内没写核数，8 核 / 14 核 GPU 按当时公开规格补上。",
+    points: [
+      { gen: "M1 Pro", year: "2021", cpu: 8, gpu: 14, ghz: 3.2, single: 2192, multi: 11212, metal: 61151, price: 1999 },
+      { gen: "M2 Pro", year: "2023", cpu: 10, gpu: 16, ghz: 3.5, single: 2398, multi: 13659, metal: 74371, price: 1999 },
+      { gen: "M3 Pro", year: "2023", cpu: 11, gpu: 14, ghz: 4.1, single: 2802, multi: 15267, metal: 70074, price: 1999 },
+      { gen: "M4 Pro", year: "2024", cpu: 12, gpu: 16, ghz: 4.5, single: 3326, multi: 21646, metal: 102673, price: 1999 },
+      { gen: "M5 Pro", year: "2026", cpu: 15, gpu: 16, ghz: 4.6, single: 3681, multi: 29550, metal: 125179, price: 2199 }
+    ]
+  },
+  {
+    id: "mbp16pro",
+    name: "16 英寸 Pro 入门",
+    note: "16 英寸从 10 核 M1 Pro 起步。M1 这行没有 Metal。M3 Pro 相对 M2 Pro 核心数同为 12，多核几乎没动。",
+    points: [
+      { gen: "M1 Pro", year: "2021", cpu: 10, gpu: null, ghz: 3.2, single: 2199, multi: 13884, metal: null, price: 2499 },
+      { gen: "M2 Pro", year: "2023", cpu: 12, gpu: 19, ghz: 3.5, single: 2423, multi: 16401, metal: 82788, price: 2499 },
+      { gen: "M3 Pro", year: "2023", cpu: 12, gpu: 18, ghz: 4.1, single: 2818, multi: 16950, metal: 76874, price: 2499 },
+      { gen: "M4 Pro", year: "2024", cpu: 14, gpu: 20, ghz: 4.5, single: 3372, multi: 24835, metal: 115301, price: 2499 },
+      { gen: "M5 Pro", year: "2026", cpu: 18, gpu: 20, ghz: 4.6, single: 3691, multi: 33561, metal: 136249, price: 2699 }
+    ]
+  },
+  {
+    id: "mbp14max",
+    name: "14 英寸 Max 入门",
+    note: "从 M3 Max 记起：14 核 CPU / 30 核 GPU，3199 美元。M4 改为 14/32，M5 改为 18/32。M1、M2 的 14 英寸 Max 要么缺核数，要么表内没有。",
+    points: [
+      { gen: "M3 Max", year: "2023", cpu: 14, gpu: 30, ghz: 4.1, single: 2812, multi: 22156, metal: 132429, price: 3199 },
+      { gen: "M4 Max", year: "2024", cpu: 14, gpu: 32, ghz: 4.5, single: 3347, multi: 25410, metal: 170439, price: 3199 },
+      { gen: "M5 Max", year: "2026", cpu: 18, gpu: 32, ghz: 4.6, single: 3694, multi: 34595, metal: 194689, price: 3599 }
+    ]
+  },
+  {
+    id: "maxfull",
+    name: "Max 满血",
+    note: "该代 Max 的最高多核，用来看天花板。M3 用 16 英寸，其余用 Mac Studio。没有入门价，右侧性价比图会空出。",
+    points: [
+      { gen: "M1 Max", year: "2022", cpu: 10, gpu: null, ghz: 3.2, single: 2231, multi: 14336, metal: 99153, price: null },
+      { gen: "M2 Max", year: "2023", cpu: 12, gpu: 38, ghz: 3.7, single: 2553, multi: 17316, metal: 145172, price: null },
+      { gen: "M3 Max", year: "2023", cpu: 16, gpu: 40, ghz: 4.1, single: 2822, multi: 24694, metal: 167148, price: null },
+      { gen: "M4 Max", year: "2025", cpu: 16, gpu: 40, ghz: 4.5, single: 3497, multi: 29109, metal: 203974, price: null },
+      { gen: "M5 Max", year: "2026", cpu: 18, gpu: 40, ghz: 4.6, single: 3734, multi: 34987, metal: 239330, price: null }
+    ]
+  },
+  {
+    id: "ultra",
+    name: "Ultra 入门",
+    note: "Studio 入门：M1 Ultra 按公开规格记 20 核 CPU（表内缺核数）。M2 为 24 核，M3 为 28/60，M5 为 30/64。没有 M4 Ultra。M2 入门行没有 Metal。",
+    points: [
+      { gen: "M1 Ultra", year: "2022", cpu: 20, gpu: null, ghz: 3.2, single: 2219, multi: 23521, metal: 147083, price: 3999 },
+      { gen: "M2 Ultra", year: "2023", cpu: 24, gpu: null, ghz: 3.7, single: 2550, multi: 28154, metal: null, price: 3999 },
+      { gen: "M3 Ultra", year: "2025", cpu: 28, gpu: 60, ghz: 4.0, single: 2922, multi: 35254, metal: 224617, price: 3999 },
+      { gen: "M5 Ultra", year: "2026", cpu: 30, gpu: 64, ghz: 4.6, single: 3715, multi: 47126, metal: 334375, price: 5499 }
+    ]
+  },
+  {
+    id: "ultrafull",
+    name: "Ultra 满血",
+    note: "CPU 拉满的那一档。M5 Ultra 36 核 / 80 核 GPU 的多核 51848 是全表最高。满血售价除 M3 Ultra 的 5499 美元外，其余没有逐项核对，故不画性价比。",
+    points: [
+      { gen: "M1 Ultra", year: "2022", cpu: 20, gpu: null, ghz: 3.2, single: 2219, multi: 23521, metal: 147083, price: null },
+      { gen: "M2 Ultra", year: "2023", cpu: 24, gpu: 76, ghz: 3.7, single: 2550, multi: 28154, metal: 221104, price: null },
+      { gen: "M3 Ultra", year: "2025", cpu: 32, gpu: 80, ghz: 4.0, single: 2920, multi: 39139, metal: 247973, price: null },
+      { gen: "M5 Ultra", year: "2026", cpu: 36, gpu: 80, ghz: 4.6, single: 3727, multi: 51848, metal: 343652, price: null }
+    ]
+  },
+  {
+    id: "mini",
+    name: "Mac mini 基础",
+    note: "M1 表内缺核数，按该机唯一的 8 核 CPU / 8 核 GPU 计入。中间没有 M3、M5 基础款。M6 直接接在 M4 后面。",
+    points: [
+      { gen: "M1", year: "2020", cpu: 8, gpu: 8, ghz: 3.2, single: 2191, multi: 8551, metal: 28496, price: 699 },
+      { gen: "M2", year: "2023", cpu: 8, gpu: 10, ghz: 3.5, single: 2401, multi: 9744, metal: 43540, price: 599 },
+      { gen: "M4", year: "2024", cpu: 10, gpu: 10, ghz: 4.4, single: 3278, multi: 15295, metal: 54223, price: 599 },
+      { gen: "M6", year: "2026", cpu: 12, gpu: 12, ghz: 4.8, single: 4004, multi: 21878, metal: 89402, price: 899 }
+    ]
+  },
+  {
+    id: "minipro",
+    name: "Mac mini Pro",
+    note: "Pro 档入门：M2 Pro 10/16，M4 Pro 12/16，M5 Pro 15/16。",
+    points: [
+      { gen: "M2 Pro", year: "2023", cpu: 10, gpu: 16, ghz: 3.5, single: 2420, multi: 13914, metal: 74168, price: 1299 },
+      { gen: "M4 Pro", year: "2024", cpu: 12, gpu: 16, ghz: 4.5, single: 3323, multi: 21967, metal: 102247, price: 1399 },
+      { gen: "M5 Pro", year: "2026", cpu: 15, gpu: 16, ghz: 4.6, single: 3669, multi: 29569, metal: 126240, price: 1699 }
+    ]
+  },
+  {
+    id: "air",
+    name: "13 英寸 Air",
+    note: "M1 用 999 美元的 7 核 GPU。M2 表内缺核数，CPU 按该机的 8 核计入，GPU 核数不猜，所以 Metal 的每核拆解从 M4 起才完整。表内没有 M3 Air。",
+    points: [
+      { gen: "M1", year: "2020", cpu: 8, gpu: 7, ghz: 3.2, single: 2164, multi: 8228, metal: 26902, price: 999 },
+      { gen: "M2", year: "2022", cpu: 8, gpu: null, ghz: 3.5, single: 2345, multi: 9642, metal: 39708, price: 1199 },
+      { gen: "M4", year: "2025", cpu: 10, gpu: 8, ghz: 4.4, single: 3203, multi: 15030, metal: 47696, price: 999 },
+      { gen: "M5", year: "2026", cpu: 10, gpu: 8, ghz: 4.5, single: 3578, multi: 17057, metal: 65706, price: 1099 }
+    ]
+  },
+  {
+    id: "imac",
+    name: "24 英寸 iMac",
+    note: "三代起售价都是 1299 美元。M1 只有一条记录，按当时 1299 美元的 8 核 CPU / 7 核 GPU 理解。M4 用 8 核 CPU / 8 核 GPU，不是 10 核选配。",
+    points: [
+      { gen: "M1", year: "2021", cpu: 8, gpu: 7, ghz: 3.2, single: 2166, multi: 8347, metal: 27901, price: 1299 },
+      { gen: "M3", year: "2023", cpu: 8, gpu: 8, ghz: 4.1, single: 2751, multi: 11646, metal: 43210, price: 1299 },
+      { gen: "M4", year: "2024", cpu: 8, gpu: 8, ghz: 4.4, single: 3174, multi: 13366, metal: 47302, price: 1299 }
+    ]
+  },
+  {
+    id: "mbp14",
+    name: "14 英寸基础芯片",
+    note: "M3 / M4 / M5 的 14 英寸入门款，发布价都是 1599 美元。M5 这一条是 2025 款。",
+    points: [
+      { gen: "M3", year: "2023", cpu: 8, gpu: 10, ghz: 4.1, single: 2771, multi: 11522, metal: 47845, price: 1599 },
+      { gen: "M4", year: "2024", cpu: 10, gpu: 10, ghz: 4.4, single: 3240, multi: 15162, metal: 53962, price: 1599 },
+      { gen: "M5", year: "2025", cpu: 10, gpu: 10, ghz: 4.6, single: 3649, multi: 17951, metal: 72804, price: 1599 }
+    ]
+  }
+];
+
+const offers = [
+  { name: "Mac mini M4", family: "mini", price: 599, single: 3278, multi: 15295, metal: 54223 },
+  { name: "Mac mini M6", family: "mini", price: 899, single: 4004, multi: 21878, metal: 89402 },
+  { name: "Mac mini M2", family: "mini", price: 599, single: 2401, multi: 9744, metal: 43540 },
+  { name: "Mac mini M1", family: "mini", price: 699, single: 2191, multi: 8551, metal: 28496 },
+  { name: "Mac mini M5 Pro", family: "mini", price: 1699, single: 3669, multi: 29569, metal: 126240 },
+  { name: "Mac mini M4 Pro", family: "mini", price: 1399, single: 3323, multi: 21967, metal: 102247 },
+  { name: "Mac mini M2 Pro", family: "mini", price: 1299, single: 2420, multi: 13914, metal: 74168 },
+  { name: "Air 13 M5", family: "air", price: 1099, single: 3578, multi: 17057, metal: 65706 },
+  { name: "Air 13 M4", family: "air", price: 999, single: 3203, multi: 15030, metal: 47696 },
+  { name: "Air 13 M2", family: "air", price: 1199, single: 2345, multi: 9642, metal: 39708 },
+  { name: "Air 13 M1", family: "air", price: 999, single: 2164, multi: 8228, metal: 26902 },
+  { name: "Air 15 M5", family: "air", price: 1299, single: 3579, multi: 17091, metal: 71185 },
+  { name: "Air 15 M4", family: "air", price: 1199, single: 3204, multi: 15005, metal: 52268 },
+  { name: "Air 15 M2", family: "air", price: 1299, single: 2345, multi: 9575, metal: 42649 },
+  { name: "iMac M4", family: "imac", price: 1299, single: 3174, multi: 13366, metal: 47302 },
+  { name: "iMac M3", family: "imac", price: 1299, single: 2751, multi: 11646, metal: 43210 },
+  { name: "iMac M1", family: "imac", price: 1299, single: 2166, multi: 8347, metal: 27901 },
+  { name: "MBP 14 M5", family: "mbp", price: 1599, single: 3649, multi: 17951, metal: 72804 },
+  { name: "MBP 14 M4", family: "mbp", price: 1599, single: 3240, multi: 15162, metal: 53962 },
+  { name: "MBP 14 M3", family: "mbp", price: 1599, single: 2771, multi: 11522, metal: 47845 },
+  { name: "MBP 14 Pro M5", family: "mbp", price: 2199, single: 3681, multi: 29550, metal: 125179 },
+  { name: "MBP 14 Pro M4", family: "mbp", price: 1999, single: 3326, multi: 21646, metal: 102673 },
+  { name: "MBP 14 Pro M3", family: "mbp", price: 1999, single: 2802, multi: 15267, metal: 70074 },
+  { name: "MBP 14 Pro M2", family: "mbp", price: 1999, single: 2398, multi: 13659, metal: 74371 },
+  { name: "MBP 14 Pro M1", family: "mbp", price: 1999, single: 2192, multi: 11212, metal: 61151 },
+  { name: "MBP 16 Pro M5", family: "mbp", price: 2699, single: 3691, multi: 33561, metal: 136249 },
+  { name: "MBP 16 Pro M4", family: "mbp", price: 2499, single: 3372, multi: 24835, metal: 115301 },
+  { name: "MBP 16 Pro M3", family: "mbp", price: 2499, single: 2818, multi: 16950, metal: 76874 },
+  { name: "MBP 16 Pro M2", family: "mbp", price: 2499, single: 2423, multi: 16401, metal: 82788 },
+  { name: "MBP 16 Pro M1", family: "mbp", price: 2499, single: 2199, multi: 13884, metal: null },
+  { name: "MBP 14 Max M5", family: "mbp", price: 3599, single: 3694, multi: 34595, metal: 194689 },
+  { name: "MBP 14 Max M4", family: "mbp", price: 3199, single: 3347, multi: 25410, metal: 170439 },
+  { name: "MBP 14 Max M3", family: "mbp", price: 3199, single: 2812, multi: 22156, metal: 132429 },
+  { name: "MBP 13 M2", family: "mbp", price: 1299, single: 2367, multi: 9680, metal: 43266 },
+  { name: "MBP 13 M1", family: "mbp", price: 1299, single: 2170, multi: 8345, metal: 28289 },
+  { name: "Studio Max M5", family: "studio", price: 2499, single: 3734, multi: 34987, metal: 191782 },
+  { name: "Studio Max M4", family: "studio", price: 1999, single: 3499, multi: 25889, metal: 169619 },
+  { name: "Studio Max M2", family: "studio", price: 1999, single: 2553, multi: 17316, metal: null },
+  { name: "Studio Max M1", family: "studio", price: 1999, single: 2231, multi: 14336, metal: 99153 },
+  { name: "Studio Ultra M5", family: "studio", price: 5499, single: 3715, multi: 47126, metal: 334375 },
+  { name: "Studio Ultra M3", family: "studio", price: 3999, single: 2922, multi: 35254, metal: 224617 },
+  { name: "Studio Ultra M2", family: "studio", price: 3999, single: 2550, multi: 28154, metal: null },
+  { name: "Studio Ultra M1", family: "studio", price: 3999, single: 2219, multi: 23521, metal: 147083 },
+  { name: "Mac Pro M2 Ultra", family: "macpro", price: 6999, single: 2583, multi: 28749, metal: null },
+  { name: "MacBook Neo", family: "neo", price: 699, single: 2929, multi: 7274, metal: 31149 }
+];
+
+const familyColor = {
+  mini: "#1c3d5a", air: "#1d5c43", imac: "#8a5a12", mbp: "#8f3d1b",
+  studio: "#3f5270", macpro: "#6b3a4a", neo: "#3e5346"
+};
+const familyName = {
+  mini: "Mac mini", air: "MacBook Air", imac: "iMac", mbp: "MacBook Pro",
+  studio: "Mac Studio", macpro: "Mac Pro", neo: "MacBook Neo"
+};
+
+const gpuGroups = [
+  {
+    title: "入门 GPU，每核 Metal",
+    points: [
+      { x: "M1·8", y: 28191 / 8, total: 28191, cores: 8 },
+      { x: "M2·10", y: 43540 / 10, total: 43540, cores: 10 },
+      { x: "M3·10", y: 47845 / 10, total: 47845, cores: 10 },
+      { x: "M4·10", y: 54223 / 10, total: 54223, cores: 10 },
+      { x: "M5·10", y: 72804 / 10, total: 72804, cores: 10 },
+      { x: "M6·12", y: 89402 / 12, total: 89402, cores: 12 }
+    ]
+  },
+  {
+    title: "40 核 Max，每核 Metal",
+    points: [
+      { x: "M3", y: 167148 / 40, total: 167148, cores: 40 },
+      { x: "M4", y: 207103 / 40, total: 207103, cores: 40 },
+      { x: "M5", y: 240329 / 40, total: 240329, cores: 40 }
+    ]
+  },
+  {
+    title: "Ultra 高 GPU，每核 Metal",
+    points: [
+      { x: "M2·76", y: 221104 / 76, total: 221104, cores: 76 },
+      { x: "M3·80", y: 247973 / 80, total: 247973, cores: 80 },
+      { x: "M5·80", y: 343652 / 80, total: 343652, cores: 80 }
+    ]
+  }
+];
+
+const NS = "http://www.w3.org/2000/svg";
+const tip = document.getElementById("tip");
+function el(name, attrs, parent) {
+  const n = document.createElementNS(NS, name);
+  for (const [k, v] of Object.entries(attrs || {})) n.setAttribute(k, String(v));
+  if (parent) parent.appendChild(n);
+  return n;
+}
+function fmt(n) {
+  if (n == null || Number.isNaN(n)) return "—";
+  return Math.round(n).toLocaleString("en-US");
+}
+function pct(x) {
+  if (x == null || !Number.isFinite(x)) return "—";
+  const v = x * 100;
+  return (v > 0 ? "+" : "") + v.toFixed(1) + "%";
+}
+function pctClass(x) {
+  if (x == null || !Number.isFinite(x)) return "";
+  if (x > 0.02) return "pos";
+  if (x < -0.02) return "neg";
+  return "flat";
+}
+function showTip(evt, html) {
+  tip.innerHTML = html;
+  tip.style.display = "block";
+  const pad = 14;
+  let x = evt.clientX + pad;
+  let y = evt.clientY + pad;
+  const r = tip.getBoundingClientRect();
+  if (x + r.width > window.innerWidth - 8) x = evt.clientX - r.width - pad;
+  if (y + r.height > window.innerHeight - 8) y = evt.clientY - r.height - pad;
+  tip.style.left = x + "px";
+  tip.style.top = y + "px";
+}
+function hideTip() { tip.style.display = "none"; }
+function niceMax(v) {
+  if (!(v > 0)) return 1;
+  const p = Math.pow(10, Math.floor(Math.log10(v)));
+  const n = v / p;
+  const steps = [1, 1.2, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10];
+  for (const s of steps) if (n <= s + 1e-6) return s * p;
+  return 10 * p;
+}
+function metricValue(p, metric) {
+  if (metric === "multi") return p.multi;
+  if (metric === "single") return p.single;
+  if (metric === "metal") return p.metal;
+  if (metric === "percpu") return p.cpu ? p.multi / p.cpu : null;
+  return null;
+}
+function metricLabel(metric) {
+  return { multi: "多核分数", single: "单核分数", metal: "Metal 分数", percpu: "多核 / CPU 核" }[metric];
+}
+
+function lineChart(host, series, opt) {
+  host.innerHTML = "";
+  const w = 860, h = opt.h || 340;
+  const pad = { l: 58, r: 16, t: 22, b: opt.b || 46 };
+  const svg = el("svg", { viewBox: `0 0 ${w} ${h}`, role: "img" }, host);
+  const labels = opt.labels;
+  const ys = series.flatMap(s => s.points.map(p => p.y)).filter(v => v != null);
+  const yMax = niceMax(Math.max(...ys) * 1.08);
+  const iw = w - pad.l - pad.r;
+  const ih = h - pad.t - pad.b;
+  const X = i => pad.l + (labels.length === 1 ? iw / 2 : (i * iw) / (labels.length - 1));
+  const Y = v => pad.t + ih - (v / yMax) * ih;
+  for (let t = 0; t <= 4; t++) {
+    const v = (yMax * t) / 4;
+    const y = Y(v);
+    el("line", { x1: pad.l, x2: w - pad.r, y1: y, y2: y, stroke: "#e6dfd4", "stroke-width": 1 }, svg);
+    el("text", { x: pad.l - 8, y: y + 4, "text-anchor": "end", fill: "#8d847a", "font-size": 11 }, svg).textContent = opt.tick ? opt.tick(v) : fmt(v);
+  }
+  el("text", { x: 14, y: 16, fill: "#6d655c", "font-size": 11 }, svg).textContent = opt.yTitle || "";
+  labels.forEach((lb, i) => {
+    const t = el("text", { x: X(i), y: h - 16, "text-anchor": "middle", fill: "#1b1915", "font-size": 12 }, svg);
+    t.textContent = lb;
+  });
+  series.forEach(s => {
+    const pts = s.points.map((p, i) => p.y == null ? null : [X(i), Y(p.y), p]);
+    let d = "";
+    pts.forEach(p => {
+      if (!p) { d += " M "; return; }
+      d += (d.endsWith("M ") || d === "" ? "M" : " L") + p[0] + " " + p[1];
+    });
+    el("path", { d: d.trim(), fill: "none", stroke: s.color, "stroke-width": 2.25 }, svg);
+    pts.forEach(p => {
+      if (!p) return;
+      const c = el("circle", { cx: p[0], cy: p[1], r: 4.5, fill: s.color, stroke: "#fbf8f2", "stroke-width": 1.5 }, svg);
+      c.addEventListener("mouseenter", ev => showTip(ev, s.tip(p[2])));
+      c.addEventListener("mousemove", ev => showTip(ev, s.tip(p[2])));
+      c.addEventListener("mouseleave", hideTip);
+    });
+  });
+  if (opt.legend) {
+    let x = pad.l;
+    opt.legend.forEach(item => {
+      el("rect", { x, y: h - 8, width: 12, height: 3, fill: item.color }, svg);
+      const t = el("text", { x: x + 16, y: h - 4, fill: "#6d655c", "font-size": 11 }, svg);
+      t.textContent = item.name;
+      x += 16 + item.name.length * 11 + 16;
+    });
+  }
+}
+
+function stepsOf(points, metric) {
+  const out = [];
+  for (let i = 1; i < points.length; i++) {
+    const a = points[i - 1], b = points[i];
+    const av = metricValue(a, metric), bv = metricValue(b, metric);
+    if (av == null || bv == null) {
+      out.push({ a, b, score: null, part: null, per: null });
+      continue;
+    }
+    const score = bv / av - 1;
+    let part = null, per = null, partName = "";
+    if (metric === "multi" || metric === "percpu") {
+      if (a.cpu && b.cpu) {
+        part = b.cpu / a.cpu - 1;
+        per = (b.multi / b.cpu) / (a.multi / a.cpu) - 1;
+        partName = "核心数";
+      }
+    } else if (metric === "metal") {
+      if (a.gpu && b.gpu && a.metal && b.metal) {
+        part = b.gpu / a.gpu - 1;
+        per = (b.metal / b.gpu) / (a.metal / a.gpu) - 1;
+        partName = "GPU 核";
+      }
+    } else if (metric === "single") {
+      if (a.ghz && b.ghz) {
+        part = b.ghz / a.ghz - 1;
+        per = (b.single / b.ghz) / (a.single / a.ghz) - 1;
+        partName = "频率";
+      }
+    }
+    out.push({ a, b, score, part, per, partName });
+  }
+  return out;
+}
+
+let lineId = "mbp14pro";
+let metric = "multi";
+
+function renderSingle() {
+  lineChart(document.getElementById("singleChart"), [
+    { name: "基础芯片", color: "#1c3d5a", points: singleBase.map(p => ({ ...p, y: p.y })), tip: p => `${p.product}<br>单核 ${fmt(p.y)} · ${p.ghz.toFixed(1)} GHz<br>每 GHz ${fmt(p.y / p.ghz)}` },
+    { name: "该代峰值", color: "#8f3d1b", points: singlePeak.map(p => ({ ...p, y: p.y })), tip: p => `${p.product}<br>单核 ${fmt(p.y)} · ${p.ghz.toFixed(1)} GHz<br>每 GHz ${fmt(p.y / p.ghz)}` }
+  ], {
+    labels: singleBase.map(p => p.gen),
+    yTitle: "单核分数",
+    h: 360
+  });
+  const rows = stepsOf(singleBase.map(p => ({ gen: p.gen, ghz: p.ghz, single: p.y })), "single");
+  const head = `<tr><th class="left">基础芯片</th><th>单核</th><th>频率</th><th>每 GHz</th><th>单核涨幅</th></tr>`;
+  const body = singleBase.map((p, i) => {
+    const prev = rows[i - 1];
+    return `<tr>
+      <td class="left">${p.gen} · ${p.product}</td>
+      <td>${fmt(p.y)}</td>
+      <td>${p.ghz.toFixed(1)}</td>
+      <td>${fmt(p.y / p.ghz)}</td>
+      <td class="${prev ? pctClass(prev.score) : ""}">${prev ? pct(prev.score) : "—"}</td>
+    </tr>`;
+  }).join("");
+  document.getElementById("singleSplit").innerHTML = head + body;
+  document.getElementById("singleNote").innerHTML =
+    "<strong>M1 到 M3，每 GHz 几乎是同一条线。</strong>基础芯片每 GHz 为 676、670、676。M2 相对 M1 的 +8.4% 和 M3 相对 M2 的 +18.2%，都对得上标称频率（3.2 → 3.5 → 4.1 GHz）。M4 每 GHz 到 728（+7.7%），M5 到 795（+9.2%），M6 到 834（+4.9%）。峰值也一样：M1 Max 的 697 分/GHz 和 M2 Ultra 的 698 分/GHz 分不出差别，单核从 2231 到 2583 是 3.2 GHz 拉到 3.7 GHz。";
+}
+
+function renderLineButtons() {
+  const host = document.getElementById("lineButtons");
+  host.innerHTML = "";
+  ladders.forEach(l => {
+    const b = document.createElement("button");
+    b.className = "chip";
+    b.type = "button";
+    b.textContent = l.name;
+    b.setAttribute("aria-pressed", String(l.id === lineId));
+    b.addEventListener("click", () => { lineId = l.id; renderLines(); });
+    host.appendChild(b);
+  });
+  const mh = document.getElementById("metricButtons");
+  mh.innerHTML = "";
+  [["multi", "多核"], ["single", "单核"], ["metal", "Metal"], ["percpu", "每核多核"]].forEach(([id, name]) => {
+    const b = document.createElement("button");
+    b.className = "metric";
+    b.type = "button";
+    b.textContent = name;
+    b.setAttribute("aria-pressed", String(id === metric));
+    b.addEventListener("click", () => { metric = id; renderLines(); });
+    mh.appendChild(b);
+  });
+}
+
+function renderLines() {
+  renderLineButtons();
+  const ladder = ladders.find(l => l.id === lineId);
+  document.getElementById("lineNote").textContent = ladder.note;
+  const labels = ladder.points.map(p => p.gen.replace(" ", "\n"));
+  const short = ladder.points.map(p => p.gen.replace(" Pro", "").replace(" Max", "").replace(" Ultra", ""));
+  lineChart(document.getElementById("lineChart"), [{
+    name: metricLabel(metric),
+    color: metric === "metal" ? "#8f3d1b" : "#1c3d5a",
+    points: ladder.points.map(p => ({ ...p, y: metricValue(p, metric) })),
+    tip: p => {
+      const y = metricValue(p, metric);
+      return `${p.gen} · ${p.year}<br>${metricLabel(metric)} ${y == null ? "—" : fmt(y)}<br>CPU ${p.cpu || "—"} 核 · GPU ${p.gpu || "—"} 核<br>${p.price ? "$" + fmt(p.price) : "未标入门价"}`;
+    }
+  }], {
+    labels: short,
+    yTitle: metricLabel(metric),
+    h: 340
+  });
+  const steps = stepsOf(ladder.points, metric === "percpu" ? "multi" : metric);
+  const partTitle = steps.find(s => s.partName)?.partName || (metric === "single" ? "频率" : metric === "metal" ? "GPU 核" : "核心数");
+  const perTitle = metric === "single" ? "每 GHz" : metric === "metal" ? "每 GPU 核" : "每 CPU 核";
+  const scoreTitle = metric === "percpu" ? "多核涨幅" : "分数涨幅";
+  let html = `<tr><th class="left">换代</th><th>${scoreTitle}</th><th>${partTitle}</th><th>${perTitle}</th></tr>`;
+  html += steps.map(s => `<tr>
+      <td class="left">${s.a.gen} → ${s.b.gen}</td>
+      <td class="${pctClass(s.score)}">${pct(s.score)}<div class="barwrap"><div class="bar" style="width:${Math.min(100, Math.max(0, (s.score || 0) * 180))}%"></div></div></td>
+      <td class="${pctClass(s.part)}">${pct(s.part)}</td>
+      <td class="${pctClass(s.per)}">${pct(s.per)}</td>
+    </tr>`).join("");
+  document.getElementById("stepTable").innerHTML = html;
+  const priced = ladder.points.filter(p => p.price && p.multi);
+  const cap = document.getElementById("lineCaption");
+  cap.textContent = `纵轴：${metricLabel(metric)}。横轴：${ladder.name} 的换代顺序，不是等距年份。`;
+  if (priced.length < 2) {
+    document.getElementById("valueMini").innerHTML = "<p class='caption' style='padding:12px'>这一档没有逐代入门价，不计算性价比。</p>";
+    return;
+  }
+  lineChart(document.getElementById("valueMini"), [{
+    name: "多核/美元",
+    color: "#1d5c43",
+    points: ladder.points.map(p => ({ ...p, y: p.price ? p.multi / p.price : null })),
+    tip: p => p.price ? `${p.gen}<br>${(p.multi / p.price).toFixed(2)} 分/美元<br>多核 ${fmt(p.multi)} / $${fmt(p.price)}` : ""
+  }], {
+    labels: ladder.points.map(p => p.gen.replace(" Pro", "").replace(" Max", "").replace(" Ultra", "")),
+    yTitle: "多核 / 美元",
+    h: 220,
+    b: 36,
+    tick: v => v.toFixed(0)
+  });
+}
+
+function renderGpu() {
+  const host = document.getElementById("gpuCharts");
+  host.innerHTML = "";
+  gpuGroups.forEach(g => {
+    const box = document.createElement("div");
+    const h3 = document.createElement("h3");
+    h3.textContent = g.title;
+    h3.style.cssText = "font-size:14px;margin:0 0 6px;font-weight:600";
+    const chart = document.createElement("div");
+    chart.className = "chart";
+    box.appendChild(h3);
+    box.appendChild(chart);
+    host.appendChild(box);
+    lineChart(chart, [{
+      name: g.title,
+      color: "#8f3d1b",
+      points: g.points,
+      tip: p => `${p.x}<br>每核 ${fmt(p.y)}<br>Metal 总计 ${fmt(p.total)} · ${p.cores} 核`
+    }], { labels: g.points.map(p => p.x), yTitle: "Metal / GPU 核", h: 250, b: 36, tick: v => fmt(v) });
+  });
+}
+
+let valueMetric = "multi";
+function renderValue() {
+  const host = document.getElementById("valueMetrics");
+  host.innerHTML = "";
+  [["multi", "多核"], ["metal", "Metal"], ["single", "单核"]].forEach(([id, name]) => {
+    const b = document.createElement("button");
+    b.className = "metric";
+    b.type = "button";
+    b.textContent = name + "性价比";
+    b.setAttribute("aria-pressed", String(id === valueMetric));
+    b.addEventListener("click", () => { valueMetric = id; renderValue(); });
+    host.appendChild(b);
+  });
+  const rows = offers.filter(o => o[valueMetric] != null).map(o => ({ ...o, v: o[valueMetric] / o.price, score: o[valueMetric] }));
+  rows.sort((a, b) => b.v - a.v);
+  const w = 860, h = 460;
+  const pad = { l: 62, r: 16, t: 22, b: 46 };
+  const svgHost = document.getElementById("scatter");
+  svgHost.innerHTML = "";
+  const svg = el("svg", { viewBox: `0 0 ${w} ${h}`, role: "img" }, svgHost);
+  const xMax = niceMax(Math.max(...rows.map(r => r.price)) * 1.05);
+  const yMax = niceMax(Math.max(...rows.map(r => r.score)) * 1.08);
+  const X = v => pad.l + (v / xMax) * (w - pad.l - pad.r);
+  const Y = v => pad.t + (1 - v / yMax) * (h - pad.t - pad.b);
+  for (let t = 0; t <= 4; t++) {
+    const xv = xMax * t / 4, yv = yMax * t / 4;
+    el("line", { x1: X(xv), x2: X(xv), y1: pad.t, y2: h - pad.b, stroke: "#e6dfd4" }, svg);
+    el("line", { x1: pad.l, x2: w - pad.r, y1: Y(yv), y2: Y(yv), stroke: "#e6dfd4" }, svg);
+    el("text", { x: X(xv), y: h - 18, "text-anchor": "middle", fill: "#8d847a", "font-size": 11 }, svg).textContent = "$" + fmt(xv);
+    el("text", { x: pad.l - 8, y: Y(yv) + 4, "text-anchor": "end", fill: "#8d847a", "font-size": 11 }, svg).textContent = fmt(yv);
+  }
+  const guides = valueMetric === "single" ? [1, 2, 3] : valueMetric === "metal" ? [30, 60, 90] : [8, 15, 25];
+  guides.forEach(k => {
+    const x2 = Math.min(xMax, yMax / k);
+    const y2 = k * x2;
+    el("line", { x1: X(0), y1: Y(0), x2: X(x2), y2: Y(y2), stroke: "#c3b8a8", "stroke-dasharray": "4 4" }, svg);
+    const lx = x2 * 0.62;
+    el("text", { x: X(lx) + 4, y: Y(k * lx) - 4, fill: "#9c9286", "font-size": 10 }, svg).textContent = k + " 分/美元";
+  });
+  el("text", { x: w / 2, y: h - 4, "text-anchor": "middle", fill: "#6d655c", "font-size": 11 }, svg).textContent = "美国入门发布价（美元）";
+  el("text", { x: pad.l, y: 14, fill: "#6d655c", "font-size": 11 }, svg).textContent = metricLabel(valueMetric);
+  [...rows].sort((a, b) => b.price - a.price).forEach(r => {
+    const c = el("circle", { cx: X(r.price), cy: Y(r.score), r: 6.5, fill: familyColor[r.family], stroke: "#fbf8f2", "stroke-width": 1 }, svg);
+    const html = `${r.name}<br>${metricLabel(valueMetric)} ${fmt(r.score)}<br>$${fmt(r.price)} · ${r.v.toFixed(2)} 分/美元`;
+    c.addEventListener("mouseenter", ev => showTip(ev, html));
+    c.addEventListener("mousemove", ev => showTip(ev, html));
+    c.addEventListener("mouseleave", hideTip);
+  });
+  const legend = document.getElementById("scatterLegend");
+  legend.innerHTML = "";
+  Object.keys(familyName).forEach(k => {
+    if (!rows.some(r => r.family === k)) return;
+    const s = document.createElement("span");
+    s.style.cssText = "font-size:12px;color:#6d655c;display:inline-flex;align-items:center;gap:6px;margin-right:10px";
+    s.innerHTML = `<i style="width:8px;height:8px;background:${familyColor[k]};display:inline-block"></i>${familyName[k]}`;
+    legend.appendChild(s);
+  });
+  document.getElementById("rankTable").innerHTML =
+    `<tr><th class="left">入门配置</th><th>分/美元</th><th>分数</th><th>价格</th></tr>` +
+    rows.map(r => `<tr><td class="left">${r.name}</td><td>${r.v.toFixed(2)}</td><td>${fmt(r.score)}</td><td>$${fmt(r.price)}</td></tr>`).join("");
+  document.getElementById("valueNote").innerHTML =
+    valueMetric === "multi"
+      ? "多核性价比最高的是 M4 Mac mini（25.53 分/美元）。M6 mini 多核高 43%，价格从 599 到 899 美元，高了 50%，所以多核性价比降到 24.34。M5 Pro 的 14 英寸即使贵了 200 美元，仍从 M4 Pro 的 10.83 升到 13.44。M5 Ultra 入门是 8.57，低于 M3 Ultra 入门的 8.82：性能 +34%，价格 +38%。Mac Pro 的 M2 Ultra 是 4.11，多核只比同芯片的 Mac Studio（7.04）高 2%，价格高 75%。MacBook Neo 是 10.41，低于 M4 / M5 Air。iMac M4 是 10.29，而同期 M4 mini 是 25.53：屏幕把单价拉高了一倍多，CPU 还更低（8 核对 10 核）。"
+      : valueMetric === "metal"
+        ? "换成 Metal 之后，M6 mini 升到第一（99.4 分/美元），高于 M4 mini 的 90.5。M6 的 Metal 比 M4 mini 高 65%，价格只高 50%。13 英寸 M5 Air 的 8 核 GPU Metal 比 M4 高 38%，价格只高 10%（1099 对 999），图形性价比明显上台阶。多核在这两代 Air 上只高 13.5%。"
+        : "";
+  if (valueMetric === "single") {
+    const m4 = 3278 / 599, m6 = 4004 / 899;
+    document.getElementById("valueNote").innerHTML =
+      `单核性价比第一仍是 M4 Mac mini（${m4.toFixed(2)} 分/美元）。M6 是 ${m6.toFixed(2)}：单核高 22%，价格高 50%。要单核绝对分数，M6 的 4004 已经高于 M5 Max；要单核每美元，M4 mini 仍然更值。MacBook Neo 单核 2929，接近 M3，单核性价比 ${(2929 / 699).toFixed(2)}，高于多数 Pro 笔记本。`;
+  }
+}
+
+function renderTable() {
+  const q = (document.getElementById("q").value || "").trim().toLowerCase();
+  const rows = SCORES.filter(r => !q || (r.product + " " + r.chip).toLowerCase().includes(q));
+  document.getElementById("allTable").innerHTML =
+    `<tr><th class="left">机型</th><th class="left">芯片</th><th>CPU</th><th>GPU</th><th>GHz</th><th>单核</th><th>多核</th><th>OpenCL</th><th>Metal</th><th>多核/核</th></tr>` +
+    rows.map(r => `<tr>
+      <td class="left">${r.product}</td>
+      <td class="left">${r.chip}</td>
+      <td>${r.cpu ?? "—"}</td>
+      <td>${r.gpu ?? "—"}</td>
+      <td>${r.ghz ?? "—"}</td>
+      <td>${fmt(r.single)}</td>
+      <td>${fmt(r.multi)}</td>
+      <td>${fmt(r.opencl)}</td>
+      <td>${fmt(r.metal)}</td>
+      <td>${r.cpu && r.multi ? fmt(r.multi / r.cpu) : "—"}</td>
+    </tr>`).join("") +
+    `<tr><td class="left" colspan="10">${rows.length} 条</td></tr>`;
+}
+
+document.getElementById("q").addEventListener("input", renderTable);
+renderSingle();
+renderLines();
+renderGpu();
+renderValue();
+renderTable();
+</script>
+</body>
+</html>
